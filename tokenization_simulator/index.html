@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Tiktoken App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'token-dark': '#2c3e50',
+                        'token-light': '#ecf0f1'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="max-w-3xl mx-auto my-12 px-5 bg-gray-100 font-sans">
+    <div class="bg-white p-8 rounded-xl shadow-lg">
+        <h1 class="text-gray-700 text-center mb-8 text-3xl font-semibold">Simple Tiktoken App for gpt2 model</h1>
+        
+        <form id="tokenForm">
+            <textarea 
+                id="textInput" 
+                class="w-full h-32 p-4 border-2 border-gray-300 rounded-lg text-base resize-y focus:border-green-500 focus:outline-none"
+                placeholder="Enter your text here...&#10;Example: hello world"
+                required
+            ></textarea>
+            
+            <button 
+                type="submit" 
+                id="tokenizeBtn"
+                class="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-3 px-8 border-0 rounded-lg cursor-pointer text-base mt-4 block mx-auto transition-colors duration-200"
+            >
+                Get Token IDs
+            </button>
+        </form>
+        
+        <div id="result" class="mt-8 p-5 bg-gray-50 rounded-lg border-l-4 border-green-500 hidden transition-all duration-300">
+            <div class="font-bold text-token-dark mb-3" id="tokenCount"></div>
+            
+            <div class="mb-4">
+                <strong class="text-gray-700">Token IDs:</strong>
+                <div class="bg-token-dark text-token-light p-4 rounded-lg font-mono break-all mt-2" id="tokenIds"></div>
+            </div>
+            
+            <div>
+                <strong class="text-gray-700">Individual Tokens:</strong>
+                <div id="tokenBreakdown"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('tokenForm');
+        const textInput = document.getElementById('textInput');
+        const tokenizeBtn = document.getElementById('tokenizeBtn');
+        const result = document.getElementById('result');
+        const tokenCount = document.getElementById('tokenCount');
+        const tokenIds = document.getElementById('tokenIds');
+        const tokenBreakdown = document.getElementById('tokenBreakdown');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const text = textInput.value.trim();
+            if (!text) return;
+            tokenizeBtn.textContent = 'Processing...';
+            tokenizeBtn.disabled = true;
+            result.classList.add('hidden');
+            
+            try {
+                const response = await fetch('/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    tokenCount.textContent = `Total tokens: ${data.count}`;
+                    tokenIds.textContent = `[${data.tokens.join(', ')}]`;
+                    
+                    tokenBreakdown.innerHTML = '';
+                    if (data.tokenDetails && data.tokenDetails.length > 0) {
+                        const container = document.createElement('div');
+                        container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3';
+                        
+                        data.tokenDetails.forEach((token, index) => {
+                            const tokenDiv = document.createElement('div');
+                            tokenDiv.className = 'bg-green-50 border border-green-500 rounded-lg p-3 text-sm';
+                            tokenDiv.innerHTML = `
+                                <div class="font-bold text-token-dark font-mono">Token ${index + 1}: ${token.id}</div>
+                                <div class="font-mono bg-gray-100 px-2 py-1 rounded mt-2 break-all">"${token.displayText}"</div>
+                            `;
+                            container.appendChild(tokenDiv);
+                        });
+                        
+                        tokenBreakdown.appendChild(container);
+                    }
+                    
+                    result.classList.remove('hidden');
+                    result.classList.remove('bg-red-100', 'text-red-800', 'border-red-500');
+                    result.classList.add('bg-gray-50', 'border-green-500');
+                } else {
+                    throw new Error(data.error || 'Failed to tokenize');
+                }
+                
+            } catch (error) {
+                tokenCount.textContent = 'Error:';
+                tokenIds.textContent = error.message;
+                tokenBreakdown.innerHTML = '';
+                result.classList.remove('hidden');
+                result.classList.remove('bg-gray-50', 'border-green-500');
+                result.classList.add('bg-red-100', 'text-red-800', 'border-red-500');
+            } finally {
+                tokenizeBtn.textContent = 'Get Token IDs';
+                tokenizeBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html> 
