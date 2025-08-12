@@ -27,3 +27,11 @@ A simple web application that demonstrates how different encoding types tokenize
 ```bash
 npm run dev
 ```
+
+## Screenshots
+
+### Main Interface
+![Application Interface](sample_images/1.jpg)
+
+### Tokenization Result
+![Tokenization Results](sample_images/2.jpg)
