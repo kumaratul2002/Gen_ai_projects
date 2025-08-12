@@ -20,9 +20,23 @@
 </head>
 <body class="max-w-3xl mx-auto my-12 px-5 bg-gray-100 font-sans">
     <div class="bg-white p-8 rounded-xl shadow-lg">
-        <h1 class="text-gray-700 text-center mb-8 text-3xl font-semibold">Simple Tiktoken App for gpt2 model</h1>
+        <h1 class="text-gray-700 text-center mb-8 text-3xl font-semibold">Tiktoken Encoding Simulator</h1>
         
         <form id="tokenForm">
+            <div class="mb-4">
+                <label for="encodingSelect" class="block text-sm font-medium text-gray-700 mb-2">Select Encoding:</label>
+                <select 
+                    id="encodingSelect" 
+                    class="w-full p-3 border-2 border-gray-300 rounded-lg text-base focus:border-green-500 focus:outline-none bg-white"
+                >
+                    <option value="gpt2">gpt2 (GPT-2/GPT-3)</option>
+                    <option value="p50k_base">p50k_base (text-davinci-002, text-davinci-003)</option>
+                    <option value="cl100k_base">cl100k_base (GPT-4, GPT-3.5-turbo)</option>
+                    <option value="r50k_base">r50k_base (text-davinci-001)</option>
+                    <option value="o200k_base">o200k_base (GPT-4o)</option>
+                </select>
+            </div>
+            
             <textarea 
                 id="textInput" 
                 class="w-full h-32 p-4 border-2 border-gray-300 rounded-lg text-base resize-y focus:border-green-500 focus:outline-none"
@@ -57,6 +71,7 @@
     <script>
         const form = document.getElementById('tokenForm');
         const textInput = document.getElementById('textInput');
+        const encodingSelect = document.getElementById('encodingSelect');
         const tokenizeBtn = document.getElementById('tokenizeBtn');
         const result = document.getElementById('result');
         const tokenCount = document.getElementById('tokenCount');
@@ -67,6 +82,7 @@
             e.preventDefault();
             
             const text = textInput.value.trim();
+            const encoding = encodingSelect.value;
             if (!text) return;
             tokenizeBtn.textContent = 'Processing...';
             tokenizeBtn.disabled = true;
@@ -78,13 +94,13 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ text })
+                    body: JSON.stringify({ text, encoding })
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    tokenCount.textContent = `Total tokens: ${data.count}`;
+                    tokenCount.textContent = `Total tokens: ${data.count} (using ${data.encoding} encoding)`;
                     tokenIds.textContent = `[${data.tokens.join(', ')}]`;
                     
                     tokenBreakdown.innerHTML = '';

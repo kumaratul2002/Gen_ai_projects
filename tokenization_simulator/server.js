@@ -10,23 +10,27 @@ app.use(express.static('.'));
 
 app.post('/', (req, res) => {
   try {
-    const { text } = req.body;
+    const { text, encoding = "gpt2" } = req.body;
     
     if (!text) {
       return res.status(400).json({ error: 'Text is required' });
     }
-    const enc = get_encoding("gpt2");
     
-    // Encode text to get token IDs
+    const validEncodings = ["gpt2", "p50k_base", "cl100k_base", "r50k_base", "o200k_base"];
+    if (!validEncodings.includes(encoding)) {
+      return res.status(400).json({ error: 'Invalid encoding type' });
+    }
+    
+    const enc = get_encoding(encoding);
     const tokensRaw = enc.encode(text);
-    const tokens = Array.from(tokensRaw); // Convert to regular array
+    const tokens = Array.from(tokensRaw);
     
     const tokenDetails = tokens.map((tokenId, index) => {
       try {
         const tokenBytes = enc.decode([tokenId]);
-        const allDecoded = enc.decode(tokens);  //decode all tokens at once, then split
+        const allDecoded = enc.decode(tokens);
         console.log("allDecoded", allDecoded);
-        // For individual tokens, try different approaches
+
         let tokenText;
         try {
           if (tokenBytes instanceof Uint8Array) {
@@ -34,7 +38,6 @@ app.post('/', (req, res) => {
           } else if (typeof tokenBytes === 'string') {
             tokenText = tokenBytes;
           } else {
-            // Fallback: convert to string
             tokenText = String.fromCharCode(...tokenBytes);
           }
         } catch (e) {
@@ -61,6 +64,7 @@ app.post('/', (req, res) => {
     res.json({
       success: true,
       text: text,
+      encoding: encoding,
       tokens: tokens,
       tokenDetails: tokenDetails,
       count: tokens.length
@@ -72,5 +76,5 @@ app.post('/', (req, res) => {
   }
 });
 app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`Server running at http://localhost:${PORT}`);
 }); 
